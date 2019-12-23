@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolygonOptions
 import ingfabian.model.CustomLocation
 import ingfabian.ui.IconGenerator
+import ingfabian.util.Constant
 import ingfabian.util.ManagmentPermission
 import kotlin.math.sqrt
 
@@ -51,15 +52,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override
     fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        origin = MarkerOptions().position(LatLng(4.667426, -74.056624)).title("HSR Layout").snippet("origin")
-        destination =   MarkerOptions().position(LatLng(4.672655, -74.054071)).title("HSR Layout").snippet("destination")
+
+        origin = MarkerOptions().position(LatLng(Constant.initialLatitud, Constant.initialLongitud)).title("HSR Layout").snippet("origin")
+        destination =   MarkerOptions().position(LatLng(Constant.destiyLatitud, Constant.destyniLongitud)).title("HSR Layout").snippet("destination")
         mMap.addMarker(origin)
         mMap.addMarker(destination)
         SetPolyline()
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(origin!!.position, 16f))
 
-        locationOrigin!!.latitude =  4.672655
-        locationOrigin!!.longitude = -74.056624
+        locationOrigin!!.latitude =  Constant.initialLatitud
+        locationOrigin!!.longitude = Constant.initialLongitud
         customLocation.oldLocation = locationOrigin
         customLocation.oldVelocity = 0f
 
@@ -88,7 +90,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (customLocation.oldLocation != location) {
                     addMarker(location)
 
-                    addMarkerVelocity(calculateVelocity(location), 4.671849, -74.055088)
+                    addMarkerVelocity(calculateVelocity(location), Constant.circleLatitud, Constant.circleLongitud)
                 }
 
             }
@@ -122,8 +124,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun SetPolyline () {
         val polygonLatLngList = ArrayList<LatLng>()
 
-        polygonLatLngList.add(LatLng(4.667426, -74.056624))
-        polygonLatLngList.add(LatLng(4.672655, -74.054071))
+        polygonLatLngList.add(LatLng(Constant.initialLatitud, Constant.initialLongitud))
+        polygonLatLngList.add(LatLng(Constant.destiyLatitud, Constant.destyniLongitud))
 
         mMap.addPolygon(
             PolygonOptions()
