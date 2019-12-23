@@ -10,37 +10,34 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolygonOptions
 import ingfabian.model.CustomLocation
+import ingfabian.ui.IconGenerator
+import ingfabian.util.ManagmentPermission
 import kotlin.math.sqrt
 
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
-     ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnPoiClickListener {
-    override fun onPoiClick(p0: PointOfInterest?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
-
+    var iconGenerator : IconGenerator? = null
     var customLocation = CustomLocation()
     var managmentSensor : ManagmentSensor? = null
-    var listaLocation = ArrayList<Location>(2)
     var locationOrigin = Location("")
-
-
-
     private  val TAG = "MapsActivity"
     var context: Context? = null
     var markerOptions: MarkerOptions? = null
     var origin: MarkerOptions? = null
     var destination: MarkerOptions? = null
     private lateinit var mMap: GoogleMap
+    var managmentPermission = ManagmentPermission(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,28 +46,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
         managmentSensor = ManagmentSensor(this)
+        iconGenerator = IconGenerator(this)
     }
     override
     fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.setOnPoiClickListener(this);
         origin = MarkerOptions().position(LatLng(4.667426, -74.056624)).title("HSR Layout").snippet("origin")
         destination =   MarkerOptions().position(LatLng(4.672655, -74.054071)).title("HSR Layout").snippet("destination")
         mMap.addMarker(origin)
         mMap.addMarker(destination)
         SetPolyline()
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(origin!!.position, 15f))
-        setListener ()
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(origin!!.position, 16f))
+
         locationOrigin!!.latitude =  4.672655
         locationOrigin!!.longitude = -74.056624
         customLocation.oldLocation = locationOrigin
         customLocation.oldVelocity = 0f
-        grunOverlay()
+
+        if (managmentPermission.checkPermissions(this)) {
+            if (isLocationEnabled()) {
+                setListener()
+            }
+        }else
+        {
+            managmentPermission.requestPermissions(this)
+        }
+
     }
+
 
     @SuppressLint("MissingPermission")
     fun setListener (){
+
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
         val locationListener = object : LocationListener {
 
             override fun onLocationChanged(location: Location) {
@@ -79,7 +88,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
                 if (customLocation.oldLocation != location) {
                     addMarker(location)
 
-                    addMarkerVelocity(calculateVelocity(location), location)
+                    addMarkerVelocity(calculateVelocity(location), 4.671849, -74.055088)
                 }
 
             }
@@ -109,12 +118,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
 
     }
 
-    fun setParams ( location: Location){
-        if (customLocation.oldLocation== null){
-
-        }
-
-    }
 
     fun SetPolyline () {
         val polygonLatLngList = ArrayList<LatLng>()
@@ -124,8 +127,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
 
         mMap.addPolygon(
             PolygonOptions()
-            .addAll(polygonLatLngList)
-            .fillColor(Color.parseColor("#3bb2d0")))
+                .addAll(polygonLatLngList)
+                .fillColor(Color.parseColor("#3bb2d0")))
 
     }
 
@@ -143,42 +146,35 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,
         acceleration = managmentSensor!!.getAcceleration()
 
         parameterRaiz = (customLocation.oldVelocity?.plus(((2*acceleration)* (distance)))!!)
+        if (parameterRaiz < 0f) {
+            velocity = 0f
+        }
+        else velocity = sqrt(parameterRaiz)
 
-        velocity = sqrt(parameterRaiz)
         customLocation.oldVelocity = velocity
-
         customLocation.oldLocation = location
         return velocity
 
     }
-    fun addMarkerVelocity (velocity : Float, location: Location){
-        // Instantiates a new CircleOptions object and defines the center and radius
-        val circleOptions = CircleOptions()
-            .center(LatLng(location.latitude, location.longitude))
-            .radius(1000.0) // In meters
-
-
-// Get back the mutable Circle
-        val circle = mMap.addCircle(circleOptions)
-
-    }
-    fun grunOverlay (){
-        var mSydneyGroundOverlay = mMap.addGroundOverlay(
-            GroundOverlayOptions()
-                .image(BitmapDescriptorFactory.fromResource(R.drawable.common_full_open_on_phone))
-                .position(LatLng(4.667426, -74.056624), 1000f)
-        )
-        mSydneyGroundOverlay.tag = "hola"
-
-
-
-
+    fun addMarkerVelocity (velocity : Float, latitude: Double, longitude: Double){
+        addIcon(iconGenerator!!, "V: $velocity", LatLng(latitude, longitude))
 
 
     }
 
+    fun addIcon (iconFactory: IconGenerator, text: CharSequence, position: LatLng){
+        var markerOptions = MarkerOptions().
+            icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(text)))
+            .position(position)
+        mMap.addMarker(markerOptions)
+    }
 
 
+    fun isLocationEnabled(): Boolean {
+        var locationManager: LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+    }
 
 
 }
