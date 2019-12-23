@@ -34,7 +34,12 @@ el listener correspondiente de la aplicación, permitiendo fijar el marker. Adem
 disponibles en el teléfono.
 
 Solución
-Se utilizó la siguiente formula 𝑣f^2=𝑣i^+2·𝑎·∆𝑥, con el condicionante que la vi = 0 en un primer momento en t0. 
+Se utilizó la siguiente formula 𝑣f^2=𝑣i^+2·𝑎·∆𝑥, con el condicionante que la vi = 0 en un primer momento en t0.
+
+![alt text](https://github.com/fabianmondragon/maspAguila/blob/master/WhatsApp%20Image%202019-12-23%20at%2010.24.07%20AM.jpeg)
+
+
+
 
 
 
